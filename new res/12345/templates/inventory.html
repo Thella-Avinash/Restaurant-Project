@@ -1,0 +1,1353 @@
+{% extends "base.html" %}
+{% block title %}Inventory — CONZURA RMS{% endblock %}
+{% block page_title %}Inventory Management{% endblock %}
+
+{% block topbar_actions %}
+<button class="btn btn-primary" onclick="document.getElementById('addModal').classList.add('open')">
+  <i class="fas fa-plus"></i> Add Item
+</button>
+{% endblock %}
+
+{% block content %}
+
+<div class="inventory-top">
+
+<div class="inv-card">
+
+<div class="inv-icon">📦</div>
+
+<div>
+<div class="inv-value">{{ items|length if items else 0 }}</div>
+<div class="inv-text">TOTAL ITEMS</div>
+</div>
+
+</div>
+
+
+<div class="inv-card">
+
+<div class="inv-icon">🟢</div>
+
+<div>
+<div class="inv-value">
+
+{{ items|selectattr('quantity','gt',10)|list|length if items else 0 }}
+
+</div>
+
+<div class="inv-text">
+
+IN STOCK
+
+</div>
+
+</div>
+
+</div>
+
+
+<div class="inv-card">
+
+<div class="inv-icon">⚠️</div>
+
+<div>
+
+<div class="inv-value">
+
+{{ items|selectattr('quantity','lt',10)|list|length if items else 0 }}
+
+</div>
+
+<div class="inv-text">
+
+LOW STOCK
+
+</div>
+
+</div>
+
+</div>
+
+
+<div class="inv-card">
+
+<div class="inv-icon">💰</div>
+
+<div>
+
+<div class="inv-value">
+
+₹{{ total_value or 0 }}
+
+</div>
+
+<div class="inv-text">
+
+INVENTORY VALUE
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="inventory-banner">
+
+<div>
+
+<div class="inventory-title">
+
+📦 Inventory Control
+
+</div>
+
+<div class="inventory-sub">
+
+Manage stock • monitor items • track availability
+
+</div>
+
+</div>
+
+<div class="inventory-live">
+
+🟢 Active
+
+</div>
+
+</div>
+
+
+{% if low_stock %}
+<div class="alert alert-error" style="margin-bottom:20px;">
+  <i class="fas fa-triangle-exclamation"></i>
+  <strong>{{ low_stock|length }} items</strong> are running low on stock:
+  {% for item in low_stock %}<strong>{{ item.item_name }}</strong>{% if not loop.last %}, {% endif %}{% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-body" style="padding:0;">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Item</th><th>Category</th><th>Quantity</th><th>Min Level</th><th>Unit Cost</th><th>Supplier</th><th>Status</th><th>Last Updated</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td style="color:var(--muted);">{{ item.id }}</td>
+            <td style="font-weight:600;">{{ item.item_name }}</td>
+            <td><span class="badge badge-pending">{{ item.category or '—' }}</span></td>
+            <td style="font-weight:700;color:{% if item.quantity <= item.min_quantity %}var(--red){% else %}var(--green){% endif %};">
+              {{ item.quantity }} {{ item.unit }}
+            </td>
+            <td style="color:var(--muted);">{{ item.min_quantity }} {{ item.unit }}</td>
+            <td>₹{{ "%.2f"|format(item.cost_per_unit) }}</td>
+            <td style="color:var(--muted);">{{ item.supplier or '—' }}</td>
+            <td>
+              <span class="badge {% if item.quantity <= item.min_quantity %}badge-low{% else %}badge-ok{% endif %}">
+                {% if item.quantity <= item.min_quantity %}Low Stock{% else %}OK{% endif %}
+              </span>
+            </td>
+            <td style="color:var(--muted);font-size:12px;">{{ item.last_updated[:10] }}</td>
+            <td style="display:flex;gap:6px;">
+              <button class="btn btn-ghost btn-sm" onclick='openEdit({{ item.id }}, {{ item.item_name|tojson }}, {{ item.category|tojson or '""' }}, {{ item.quantity }}, {{ item.unit|tojson }}, {{ item.min_quantity }}, {{ item.cost_per_unit }}, {{ item.supplier|tojson or '""' }})'>
+                <i class="fas fa-pen"></i>
+              </button>
+              <a href="{{ url_for('inventory.delete', item_id=item.id) }}" class="btn btn-danger btn-sm" onclick="return confirm('Remove this item?')">
+                <i class="fas fa-trash"></i>
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted);">No inventory items found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Add Inventory Item</span>
+      <button class="modal-close" onclick="document.getElementById('addModal').classList.remove('open')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form method="POST" action="{{ url_for('inventory.add') }}">
+        <div class="grid-2">
+          <div class="form-group"><label>Item Name</label><input type="text" name="item_name" required placeholder="e.g. Rice (Basmati)"></div>
+          <div class="form-group"><label>Category</label><input type="text" name="category" placeholder="e.g. Grains, Vegetables"></div>
+        </div>
+        <div class="grid-3">
+          <div class="form-group"><label>Quantity</label><input type="number" name="quantity" step="0.01" required></div>
+          <div class="form-group"><label>Unit</label><input type="text" name="unit" placeholder="kg / liters / pcs"></div>
+          <div class="form-group"><label>Min Level</label><input type="number" name="min_quantity" step="0.01" value="10"></div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group"><label>Cost per Unit (₹)</label><input type="number" name="cost_per_unit" step="0.01" value="0"></div>
+          <div class="form-group"><label>Supplier</label><input type="text" name="supplier" placeholder="Supplier name"></div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;"><i class="fas fa-plus"></i> Add Item</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Update Inventory</span>
+      <button class="modal-close" onclick="document.getElementById('editModal').classList.remove('open')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form method="POST" id="editForm">
+        <div class="grid-2">
+          <div class="form-group"><label>Item Name</label><input type="text" name="item_name" id="eName" required></div>
+          <div class="form-group"><label>Category</label><input type="text" name="category" id="eCat"></div>
+        </div>
+        <div class="grid-3">
+          <div class="form-group"><label>Quantity</label><input type="number" name="quantity" id="eQty" step="0.01" required></div>
+          <div class="form-group"><label>Unit</label><input type="text" name="unit" id="eUnit"></div>
+          <div class="form-group"><label>Min Level</label><input type="number" name="min_quantity" id="eMin" step="0.01"></div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group"><label>Cost per Unit (₹)</label><input type="number" name="cost_per_unit" id="eCost" step="0.01"></div>
+          <div class="form-group"><label>Supplier</label><input type="text" name="supplier" id="eSupplier"></div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;"><i class="fas fa-save"></i> Update</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/inventory.js') }}"></script>
+
+<style>
+
+.inventory-banner{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+padding:18px 26px;
+
+margin-bottom:20px;
+
+border-radius:24px;
+
+background:
+
+linear-gradient(
+135deg,
+#181922,
+#20253d
+);
+
+border:
+
+1px solid rgba(
+255,
+255,
+255,
+.06
+);
+
+}
+
+
+
+.inventory-title{
+
+font-size:28px;
+
+font-weight:900;
+
+background:
+
+linear-gradient(
+90deg,
+#ffd56a,
+#71b7ff
+);
+
+-webkit-background-clip:text;
+
+-webkit-text-fill-color:transparent;
+
+}
+
+
+
+.inventory-sub{
+
+margin-top:8px;
+
+font-size:13px;
+
+color:#9ca4b5;
+
+}
+
+
+
+.inventory-live{
+
+padding:12px 18px;
+
+border-radius:18px;
+
+background:
+
+rgba(
+78,
+202,
+139,
+.12
+);
+
+color:#65ffad;
+
+font-weight:800;
+
+}
+
+
+
+/* FORCE TABLE LOOK */
+
+.card{
+
+border-radius:26px !important;
+
+background:
+
+rgba(
+255,
+255,
+255,
+.03
+)!important;
+
+}
+
+
+
+table{
+
+border-spacing:0 10px;
+
+}
+
+
+
+tbody tr{
+
+background:
+
+rgba(
+255,
+255,
+255,
+.02
+);
+
+}
+
+
+
+tbody tr:hover{
+
+background:
+
+rgba(
+255,
+255,
+255,
+.05
+);
+
+}
+
+
+
+.btn{
+
+border-radius:16px !important;
+
+}
+
+
+
+@media(max-width:900px){
+
+.inventory-banner{
+
+flex-direction:column;
+
+gap:14px;
+
+align-items:flex-start;
+
+}
+
+}
+
+</style>
+
+<style>
+
+/* HEADER */
+
+.inventory-top{
+
+display:grid;
+
+grid-template-columns:
+
+repeat(
+4,
+1fr
+);
+
+gap:18px;
+
+margin-bottom:24px;
+
+}
+
+
+
+/* PREMIUM CARDS */
+
+.inv-card{
+
+display:flex;
+
+align-items:center;
+
+gap:16px;
+
+padding:20px;
+
+border-radius:26px;
+
+background:
+
+linear-gradient(
+135deg,
+rgba(255,255,255,.05),
+rgba(255,255,255,.02)
+);
+
+border:
+
+1px solid rgba(
+255,
+255,
+255,
+.08
+);
+
+backdrop-filter:
+
+blur(20px);
+
+transition:.35s;
+
+}
+
+
+
+.inv-card:hover{
+
+transform:
+
+translateY(-6px);
+
+}
+
+
+
+.inv-card:nth-child(1){
+
+border-left:5px solid #5b9ef7;
+
+}
+
+
+
+.inv-card:nth-child(2){
+
+border-left:5px solid #4eca8b;
+
+}
+
+
+
+.inv-card:nth-child(3){
+
+border-left:5px solid #ff6b6b;
+
+}
+
+
+
+.inv-card:nth-child(4){
+
+border-left:5px solid #d4a853;
+
+}
+
+
+
+/* ICON */
+
+.inv-icon{
+
+width:62px;
+
+height:62px;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+font-size:28px;
+
+border-radius:18px;
+
+background:
+
+rgba(
+255,
+255,
+255,
+.06
+);
+
+}
+
+
+
+/* TEXT */
+
+.inv-value{
+
+font-size:30px;
+
+font-weight:900;
+
+color:var(--gold);
+
+}
+
+
+
+.inv-text{
+
+font-size:11px;
+
+letter-spacing:2px;
+
+opacity:.75;
+
+}
+
+
+
+/* TABLE */
+
+.card{
+
+border-radius:28px !important;
+
+overflow:hidden;
+
+}
+
+
+
+table{
+
+border-spacing:0 10px;
+
+}
+
+
+
+thead{
+
+background:
+
+rgba(
+255,
+255,
+255,
+.04
+);
+
+}
+
+
+
+tbody tr{
+
+background:
+
+rgba(
+255,
+255,
+255,
+.02
+);
+
+transition:.3s;
+
+}
+
+
+
+tbody tr:hover{
+
+transform:scale(1.01);
+
+background:
+
+rgba(
+255,
+255,
+255,
+.05
+);
+
+}
+
+
+
+/* BUTTON */
+
+.btn{
+
+border-radius:18px !important;
+
+}
+
+
+
+/* MOBILE */
+
+@media(max-width:900px){
+
+.inventory-top{
+
+grid-template-columns:
+
+1fr 1fr;
+
+}
+
+}
+
+
+
+@media(max-width:600px){
+
+.inventory-top{
+
+grid-template-columns:
+
+1fr;
+
+}
+
+}
+
+
+/* PREMIUM INVENTORY V2 */
+
+/* SEARCH BAR */
+
+.search-wrap{
+
+display:flex;
+
+align-items:center;
+
+gap:12px;
+
+padding:16px 20px;
+
+margin-bottom:20px;
+
+border-radius:22px;
+
+background:
+
+linear-gradient(
+135deg,
+rgba(255,255,255,.06),
+rgba(255,255,255,.02)
+);
+
+border:
+
+1px solid rgba(
+255,
+255,
+255,
+.08
+);
+
+}
+
+
+
+.search-wrap input{
+
+flex:1;
+
+background:none;
+
+border:none;
+
+outline:none;
+
+color:white;
+
+font-size:14px;
+
+}
+
+
+
+/* INVENTORY HEADER */
+
+.inventory-top{
+
+position:relative;
+
+}
+
+
+
+.inventory-top::after{
+
+content:"";
+
+position:absolute;
+
+left:0;
+
+bottom:-10px;
+
+width:100%;
+
+height:1px;
+
+background:
+
+linear-gradient(
+90deg,
+transparent,
+rgba(255,255,255,.12),
+transparent
+);
+
+}
+
+
+
+/* STOCK BADGES */
+
+.stock-high{
+
+padding:10px 16px;
+
+border-radius:16px;
+
+background:
+
+rgba(
+78,
+202,
+139,
+.14
+);
+
+color:#65ffad;
+
+font-weight:700;
+
+}
+
+
+
+.stock-low{
+
+padding:10px 16px;
+
+border-radius:16px;
+
+background:
+
+rgba(
+255,
+107,
+107,
+.14
+);
+
+color:#ff7777;
+
+font-weight:700;
+
+}
+
+
+
+/* INVENTORY TABLE */
+
+.table-wrap{
+
+padding:16px;
+
+border-radius:28px;
+
+background:
+
+linear-gradient(
+180deg,
+rgba(255,255,255,.03),
+rgba(255,255,255,.01)
+);
+
+}
+
+
+
+/* ROW */
+
+tbody tr{
+
+border-radius:20px;
+
+overflow:hidden;
+
+}
+
+
+
+tbody td{
+
+padding:18px !important;
+
+}
+
+
+
+/* IMAGE */
+
+.inv-img{
+
+width:58px;
+
+height:58px;
+
+object-fit:cover;
+
+border-radius:18px;
+
+box-shadow:
+
+0 10px 26px rgba(
+0,
+0,
+0,
+.25
+);
+
+}
+
+
+
+/* ACTION BUTTONS */
+
+.btn-sm{
+
+width:42px;
+
+height:42px;
+
+padding:0 !important;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+border-radius:14px !important;
+
+}
+
+
+
+/* ADD BUTTON */
+
+.btn-primary{
+
+background:
+
+linear-gradient(
+90deg,
+#5b9ef7,
+#8d68ff
+)!important;
+
+}
+
+
+
+/* FLOAT */
+
+.inv-card{
+
+overflow:hidden;
+
+}
+
+
+
+.inv-card::after{
+
+content:"";
+
+position:absolute;
+
+right:-50px;
+
+top:-50px;
+
+width:120px;
+
+height:120px;
+
+border-radius:50%;
+
+background:
+
+radial-gradient(
+circle,
+rgba(
+255,
+255,
+255,
+.08
+),
+transparent
+);
+
+}
+
+
+
+/* TABLE HEADER */
+
+thead th{
+
+font-size:11px;
+
+letter-spacing:2px;
+
+text-transform:uppercase;
+
+color:#8e96b7;
+
+}
+
+
+
+/* HOVER */
+
+tbody tr:hover{
+
+transform:
+
+translateX(8px);
+
+}
+
+
+/* INVENTORY PRO UI */
+
+/* PAGE BG */
+
+.content{
+
+position:relative;
+
+}
+
+
+
+.content::before{
+
+content:"";
+
+position:absolute;
+
+top:-250px;
+
+right:-250px;
+
+width:450px;
+
+height:450px;
+
+border-radius:50%;
+
+background:
+
+radial-gradient(
+circle,
+rgba(
+91,
+158,
+247,
+.08
+),
+transparent
+);
+
+}
+
+
+
+.content::after{
+
+content:"";
+
+position:absolute;
+
+left:-250px;
+
+bottom:-250px;
+
+width:450px;
+
+height:450px;
+
+border-radius:50%;
+
+background:
+
+radial-gradient(
+circle,
+rgba(
+212,
+168,
+83,
+.08
+),
+transparent
+);
+
+}
+
+
+
+/* KPI */
+
+.inv-card{
+
+position:relative;
+
+overflow:hidden;
+
+}
+
+
+
+.inv-card::before{
+
+content:"";
+
+position:absolute;
+
+top:0;
+
+left:0;
+
+height:4px;
+
+width:100%;
+
+background:
+
+linear-gradient(
+90deg,
+#5b9ef7,
+#4eca8b,
+#ff9b45,
+#d4a853
+);
+
+}
+
+
+
+.inv-card:hover{
+
+transform:
+
+translateY(-8px);
+
+box-shadow:
+
+0 25px 60px rgba(
+0,
+0,
+0,
+.28
+);
+
+}
+
+
+
+/* TABLE */
+
+.table-wrap{
+
+border-radius:34px;
+
+overflow:hidden;
+
+}
+
+
+
+table{
+
+width:100%;
+
+}
+
+
+
+thead{
+
+background:
+
+rgba(
+255,
+255,
+255,
+.05
+);
+
+}
+
+
+
+thead th{
+
+padding:22px !important;
+
+}
+
+
+
+tbody td{
+
+padding:20px !important;
+
+}
+
+
+
+tbody tr{
+
+transition:.35s;
+
+}
+
+
+
+tbody tr:hover{
+
+background:
+
+rgba(
+255,
+255,
+255,
+.04
+);
+
+transform:
+
+scale(1.01);
+
+}
+
+
+
+/* STOCK */
+
+.stock-high{
+
+background:
+
+linear-gradient(
+90deg,
+rgba(
+78,
+202,
+139,
+.18
+),
+transparent
+);
+
+}
+
+
+
+.stock-low{
+
+background:
+
+linear-gradient(
+90deg,
+rgba(
+255,
+107,
+107,
+.18
+),
+transparent
+);
+
+}
+
+
+
+/* BUTTON */
+
+.btn{
+
+border-radius:20px !important;
+
+}
+
+
+
+.btn-primary{
+
+background:
+
+linear-gradient(
+90deg,
+#5b9ef7,
+#7d6cff
+)!important;
+
+}
+
+
+
+.btn-danger{
+
+background:
+
+linear-gradient(
+90deg,
+#ff6b6b,
+#ff8a66
+)!important;
+
+}
+
+
+
+/* SEARCH */
+
+.search-wrap{
+
+position:sticky;
+
+top:10px;
+
+z-index:5;
+
+}
+
+
+
+/* SCROLL */
+
+::-webkit-scrollbar{
+
+width:10px;
+
+}
+
+
+
+::-webkit-scrollbar-thumb{
+
+background:
+
+linear-gradient(
+180deg,
+#5b9ef7,
+#d4a853
+);
+
+border-radius:20px;
+
+}
+
+
+
+/* TITLE */
+
+.page-title{
+
+font-size:34px !important;
+
+font-weight:900;
+
+background:
+
+linear-gradient(
+90deg,
+#ffffff,
+#d4a853
+);
+
+-webkit-background-clip:text;
+
+-webkit-text-fill-color:transparent;
+
+}
+
+
+</style>
+
+{% endblock %}

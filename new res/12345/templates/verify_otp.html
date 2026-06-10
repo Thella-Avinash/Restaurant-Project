@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verify OTP — CONZURA RMS</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+<div class="login-wrap">
+  <div class="logo-area">
+    <div class="logo-icon"><i class="fas fa-utensils"></i></div>
+    <div class="brand">CONZURA</div>
+    <div class="tagline">Restaurant Management System</div>
+  </div>
+
+  <div class="card">
+    <div class="tab-panel active" style="display:block;">
+      <h2>Enter Reset Code</h2>
+      <p class="sub">Enter the 6-digit OTP sent to your registered email</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+          {% if cat in ('error','success') %}
+          <div class="alert alert-{{ cat }}">
+            <i class="fas fa-{{ 'exclamation-circle' if cat=='error' else 'check-circle' }}"></i> {{ msg }}
+          </div>
+          {% endif %}
+        {% endfor %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('auth.verify_otp') }}">
+        <div class="form-group">
+          <label>Reset Code (OTP)</label>
+          <div class="input-wrap">
+            <i class="fas fa-shield-halved icon"></i>
+            <input type="text" name="otp" placeholder="6-digit OTP" required maxlength="6" pattern="\d{6}" autofocus style="letter-spacing: 4px; font-weight: 600;">
+          </div>
+        </div>
+        <button type="submit" class="btn-main"><i class="fas fa-check"></i> &nbsp;Verify OTP</button>
+      </form>
+
+      <form method="POST" action="{{ url_for('auth.resend_otp') }}" style="margin-top:16px; text-align:center;">
+        <button type="submit" style="background:none;border:none;color:var(--gold2);cursor:pointer;font-size:13px;font-weight:600;">Didn't receive it? Resend code</button>
+      </form>
+    </div>
+  </div>
+</div>
+</body>
+</html>

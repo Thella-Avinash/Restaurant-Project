@@ -1,0 +1,440 @@
+{% extends "base.html" %}
+{% block title %}Billing — CONZURA RMS{% endblock %}
+{% block page_title %}Billing{% endblock %}
+
+{% block topbar_actions %}
+<button class="btn btn-primary btn-sm" onclick="document.getElementById('upiModal').classList.add('open')">
+  <i class="fas fa-qrcode"></i> UPI QR
+</button>
+{% endblock %}
+
+{% block content %}
+
+
+<div class="stats-grid">
+
+<div class="stat-card">
+
+<div class="stat-value">
+
+₹{{ "%.0f"|format(today_revenue or 0) }}
+
+</div>
+
+<div class="stat-label">
+
+TODAY'S REVENUE
+
+</div>
+
+</div>
+
+
+
+<div class="stat-card">
+
+<div class="stat-value">
+
+{{ total_bills or 0 }}
+
+</div>
+
+<div class="stat-label">
+
+BILLS GENERATED
+
+</div>
+
+</div>
+
+
+
+<div class="stat-card">
+
+<div class="stat-value">
+
+₹{{ "%.0f"|format(avg_bill or 0) }}
+
+</div>
+
+<div class="stat-label">
+
+AVERAGE BILL
+
+</div>
+
+</div>
+
+
+
+<div class="stat-card">
+
+<div class="stat-value">
+
+{{ payments or 0 }}
+
+</div>
+
+<div class="stat-label">
+
+PAYMENTS
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<div class="card">
+  <div class="card-body" style="padding:0;">
+    <div class="table-wrap">
+      
+<div
+class="search-wrap"
+style="
+margin-bottom:20px;
+">
+
+<i class="fas fa-search"></i>
+
+<input
+id="billSearch"
+type="text"
+placeholder="Search bill / customer / payment..."
+
+style="
+width:100%;
+border:none;
+background:transparent;
+color:var(--text);
+">
+
+</div>
+
+
+      <table>
+        <thead>
+          <tr><th>Bill#</th><th>Order#</th><th>Table</th><th>Customer</th><th>Subtotal</th><th>Tax</th><th>Discount</th><th>Total</th><th>Payment</th><th>Date</th><th>Actions</th></tr>
+        </thead>
+        
+<tbody>
+
+{% for b in bills %}
+
+<tr class="bill-row">
+
+<td
+style="
+color:var(--gold);
+font-weight:700;
+">
+
+#{{ b.id }}
+
+</td>
+
+
+<td>
+
+<a
+href="{{ url_for('billing.receipt', order_id=b.order_id) }}"
+style="color:var(--blue);">
+
+#{{ b.order_id }}
+
+</a>
+
+</td>
+
+
+<td>
+
+T-{{ b.table_number }}
+
+</td>
+
+
+<td>
+
+{{ b.customer_name or "—" }}
+
+</td>
+
+
+<td>
+
+₹{{ "%.2f"|format(b.subtotal) }}
+
+</td>
+
+
+<td>
+
+₹{{ "%.2f"|format(b.tax_amount) }}
+
+</td>
+
+
+<td
+style="
+color:var(--red);
+">
+
+{% if b.discount>0 %}
+
+-₹{{ "%.2f"|format(b.discount) }}
+
+{% else %}
+
+—
+
+{% endif %}
+
+</td>
+
+
+<td
+style="
+font-weight:700;
+color:var(--green);
+">
+
+₹{{ "%.2f"|format(b.total_amount) }}
+
+</td>
+
+
+<td>
+
+{% if b.payment_method %}
+
+<span
+style="
+padding:8px 14px;
+border-radius:20px;
+background:#4eca8b;
+color:black;
+font-weight:700;
+">
+
+✓ {{ b.payment_method|title }}
+
+</span>
+
+{% else %}
+
+<span
+style="
+padding:8px 14px;
+border-radius:20px;
+background:#e85d5d;
+color:white;
+">
+
+Pending
+
+</span>
+
+{% endif %}
+
+</td>
+
+
+<td
+style="
+color:var(--muted);
+font-size:12px;
+">
+
+{{ b.created_at[:16] }}
+
+</td>
+
+
+<td
+style="
+display:flex;
+gap:6px;
+flex-wrap:wrap;
+">
+
+<a
+href="{{ url_for('billing.receipt', order_id=b.order_id) }}"
+class="btn btn-ghost btn-sm">
+
+<i class="fas fa-print"></i>
+
+</a>
+
+
+<button
+class="btn btn-primary btn-sm"
+onclick="window.print()">
+
+🖨
+
+</button>
+
+
+<button
+class="btn btn-success btn-sm"
+onclick="showUpiQr('{{ b.total_amount }}','Bill #{{ b.id }}')">
+
+<i class="fas fa-qrcode"></i>
+
+</button>
+
+</td>
+
+</tr>
+
+{% else %}
+
+<tr>
+
+<td
+colspan="11"
+style="
+text-align:center;
+padding:32px;
+color:var(--muted);
+">
+
+No bills yet.
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- UPI QR Modal -->
+<div class="modal-overlay" id="upiModal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <span class="modal-title"><i class="fas fa-qrcode" style="color:var(--gold);margin-right:8px;"></i>UPI Payment</span>
+      <button class="modal-close" onclick="document.getElementById('upiModal').classList.remove('open')">&times;</button>
+    </div>
+    <div class="modal-body" style="text-align:center;">
+      <!-- UPI ID Config -->
+      <div id="upiSetup" style="margin-bottom:20px;">
+        <div class="form-group" style="text-align:left;">
+          <label>UPI ID</label>
+          <input type="text" id="upiId" placeholder="e.g. restaurant@upi or 9876543210@paytm"
+            value="" style="text-align:center;font-size:15px;">
+        </div>
+        <div class="grid-2" style="gap:12px;">
+          <div class="form-group" style="text-align:left;">
+            <label>Amount (₹)</label>
+            <input type="number" id="upiAmount" placeholder="0.00" style="text-align:center;">
+          </div>
+          <div class="form-group" style="text-align:left;">
+            <label>Merchant Name</label>
+            <input type="text" id="upiName" placeholder="CONZURA Restaurant" value="CONZURA Restaurant">
+          </div>
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="generateQr()">
+          <i class="fas fa-qrcode"></i> Generate QR Code
+        </button>
+      </div>
+
+      <!-- QR Display -->
+      <div id="qrDisplay" style="display:none;">
+        <div style="background:white;border-radius:16px;padding:20px;display:inline-block;margin-bottom:16px;box-shadow:0 8px 32px rgba(0,0,0,.3);">
+          <img id="qrImage" src="" alt="UPI QR Code" style="width:220px;height:220px;display:block;">
+        </div>
+        <div id="qrInfo" style="margin-bottom:16px;"></div>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('qrDisplay').style.display='none';document.getElementById('upiSetup').style.display='block';">
+            <i class="fas fa-pen"></i> Change
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="downloadQr()">
+            <i class="fas fa-download"></i> Download QR
+          </button>
+        </div>
+        <!-- Payment apps -->
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+          <div style="font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">Scan with any UPI App</div>
+          <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;">
+            <div style="text-align:center;font-size:11px;color:var(--muted);"><div style="width:40px;height:40px;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-size:20px;">📱</div>GPay</div>
+            <div style="text-align:center;font-size:11px;color:var(--muted);"><div style="width:40px;height:40px;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-size:20px;">💙</div>PhonePe</div>
+            <div style="text-align:center;font-size:11px;color:var(--muted);"><div style="width:40px;height:40px;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-size:20px;">🔵</div>Paytm</div>
+            <div style="text-align:center;font-size:11px;color:var(--muted);"><div style="width:40px;height:40px;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-size:20px;">🏦</div>BHIM</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showUpiQr(amount, label) {
+  document.getElementById('upiAmount').value = parseFloat(amount).toFixed(2);
+  document.getElementById('upiModal').classList.add('open');
+  document.getElementById('qrDisplay').style.display = 'none';
+  document.getElementById('upiSetup').style.display = 'block';
+}
+
+function generateQr() {
+  const upiId  = document.getElementById('upiId').value.trim();
+  const amount = document.getElementById('upiAmount').value.trim();
+  const name   = document.getElementById('upiName').value.trim() || 'CONZURA Restaurant';
+
+  if (!upiId) { alert('Please enter your UPI ID (e.g. restaurant@upi)'); return; }
+  if (!amount || parseFloat(amount) <= 0) { alert('Please enter a valid amount'); return; }
+
+  // Build UPI deep link string
+  const upiString = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(name)}&am=${amount}&cu=INR&tn=${encodeURIComponent('Payment to ' + name)}`;
+
+  // Use Google Charts QR API (free, no key needed)
+  const qrUrl = `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(upiString)}&choe=UTF-8`;
+
+  document.getElementById('qrImage').src = qrUrl;
+  document.getElementById('qrInfo').innerHTML = `
+    <div style="background:rgba(78,202,139,.08);border:1px solid rgba(78,202,139,.2);border-radius:10px;padding:14px;font-size:13px;line-height:1.8;">
+      <div><span style="color:var(--muted);">UPI ID:</span> <strong style="color:var(--gold2);">${upiId}</strong></div>
+      <div><span style="color:var(--muted);">Amount:</span> <strong style="color:var(--green);font-size:18px;">₹${parseFloat(amount).toFixed(2)}</strong></div>
+      <div><span style="color:var(--muted);">Merchant:</span> <strong>${name}</strong></div>
+    </div>`;
+
+  document.getElementById('upiSetup').style.display = 'none';
+  document.getElementById('qrDisplay').style.display = 'block';
+  localStorage.setItem('upiId', upiId);
+  localStorage.setItem('upiName', name);
+}
+
+function downloadQr() {
+  const img = document.getElementById('qrImage');
+  const a = document.createElement('a');
+  a.href = img.src; a.download = 'upi-qr.png'; a.click();
+}
+
+// Restore saved UPI ID
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('upiId');
+  const savedName = localStorage.getItem('upiName');
+  if (saved) document.getElementById('upiId').value = saved;
+  if (savedName) document.getElementById('upiName').value = savedName;
+
+  // ── Bill Search ──
+  document.getElementById('billSearch').addEventListener('input', function () {
+    const q = this.value.toLowerCase().trim();
+    document.querySelectorAll('.bill-row').forEach(row => {
+      const text = row.textContent.toLowerCase();
+      row.style.display = (!q || text.includes(q)) ? '' : 'none';
+    });
+  });
+});
+</script>
+{% endblock %}

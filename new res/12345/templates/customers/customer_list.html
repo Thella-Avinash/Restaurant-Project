@@ -1,0 +1,280 @@
+
+{% extends "base.html" %}
+
+{% block title %}
+Customers
+{% endblock %}
+
+{% block page_title %}
+Customers
+{% endblock %}
+
+{% block content %}
+
+<!-- KPI -->
+
+<div class="customer-grid">
+
+<div class="customer-card blue">
+<div class="sparkle">✦</div>
+<div class="card-icon blue-icon"><i class="fas fa-users"></i></div>
+<div class="big">{{ stats.total }}</div>
+<div class="small">TOTAL CUSTOMERS</div>
+</div>
+
+<div class="customer-card green">
+<div class="sparkle">✦</div>
+<div class="card-icon green-icon"><i class="fas fa-user-plus"></i></div>
+<div class="big">{{ stats.new }}</div>
+<div class="small">NEW CUSTOMERS</div>
+</div>
+
+<div class="customer-card orange">
+<div class="sparkle">✦</div>
+<div class="card-icon orange-icon"><i class="fas fa-rotate"></i></div>
+<div class="big">{{ stats.returning }}</div>
+<div class="small">RETURNING</div>
+</div>
+
+<div class="customer-card gold">
+<div class="sparkle">✦</div>
+<div class="card-icon gold-icon"><i class="fas fa-crown"></i></div>
+<div class="big top-name">{{ stats.top }}</div>
+<div class="small">TOP CUSTOMER</div>
+</div>
+
+</div>
+
+
+
+<!-- SEARCH -->
+
+<div class="search-area">
+
+<input
+id="customerSearch"
+type="text"
+placeholder="Search customer...">
+
+</div>
+
+
+
+<!-- TABLE -->
+
+<div class="table-wrap">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>ID</th>
+
+<th>Name</th>
+
+<th>Phone</th>
+
+<th>Email</th>
+
+<th>Points</th>
+
+</tr>
+
+</thead>
+
+
+<tbody>
+
+{% for c in customers %}
+
+<tr class="customer-row">
+
+<td>#{{ c.id }}</td>
+
+<td>{{ c.name }}</td>
+
+<td>{{ c.phone }}</td>
+
+<td>{{ c.email }}</td>
+
+<td>
+
+<span class="badge">
+
+{{ c.points }}
+
+</span>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+{% endblock %}
+
+
+
+{% block scripts %}
+
+<style>
+
+/* GRID */
+
+.customer-grid{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:18px;
+margin-bottom:30px;
+}
+
+/* CARD — tall vertical style */
+.customer-card{
+position:relative;
+display:flex;
+flex-direction:column;
+align-items:flex-start;
+justify-content:flex-end;
+padding:28px 24px;
+border-radius:28px;
+min-height:220px;
+overflow:hidden;
+border:1px solid rgba(255,255,255,.07);
+}
+
+.customer-card::before{
+content:"";
+position:absolute;
+top:0;left:0;width:100%;height:4px;
+border-radius:28px 28px 0 0;
+}
+
+.blue  { background:linear-gradient(160deg,#0d1220,#101828); }
+.green { background:linear-gradient(160deg,#0a1a14,#0d2018); }
+.orange{ background:linear-gradient(160deg,#1a120a,#201508); }
+.gold  { background:linear-gradient(160deg,#1a1508,#201a08); }
+
+.blue::before  { background:linear-gradient(90deg,#4a8dff,#6bb7ff); }
+.green::before { background:linear-gradient(90deg,#36d990,#69ffb3); }
+.orange::before{ background:linear-gradient(90deg,#ff7c2a,#ffb347); }
+.gold::before  { background:linear-gradient(90deg,#d4a853,#ffd877); }
+
+/* sparkle top-right */
+.sparkle{
+position:absolute;
+top:18px;right:18px;
+font-size:16px;
+opacity:.4;
+color:white;
+}
+
+/* icon */
+.card-icon{
+font-size:22px;
+margin-bottom:auto;
+margin-top:10px;
+}
+.blue-icon  { color:#5b9ef7; }
+.green-icon { color:#36d990; }
+.orange-icon{ color:#ff7c2a; }
+.gold-icon  { color:#e85d5d; }
+
+/* numbers */
+.big{
+font-size:38px;
+font-weight:900;
+color:#dcb25d;
+line-height:1;
+margin-top:28px;
+}
+
+.top-name{
+font-size:28px;
+}
+
+.small{
+margin-top:10px;
+letter-spacing:3px;
+font-size:11px;
+color:#888;
+}
+
+/* SEARCH */
+.search-area{
+margin-bottom:24px;
+}
+
+.search-area input{
+width:100%;
+padding:18px;
+border-radius:22px;
+background:#171b26;
+border:1px solid rgba(255,255,255,.08);
+color:white;
+font-size:15px;
+outline:none;
+}
+
+.search-area input:focus{
+border-color:var(--gold);
+}
+
+/* TABLE */
+.table-wrap{
+padding:24px;
+border-radius:32px;
+background:linear-gradient(180deg,#171b27,#12141d);
+}
+
+table{
+width:100%;
+border-spacing:0 12px;
+}
+
+th{
+padding:18px;
+color:#8f97b2;
+}
+
+td{
+padding:20px;
+}
+
+tbody tr:hover{
+background:rgba(255,255,255,.04);
+}
+
+.badge{
+padding:8px 18px;
+border-radius:18px;
+background:linear-gradient(90deg,#4eca8b,#6cffb7);
+color:black;
+font-weight:800;
+}
+
+@media(max-width:900px){
+.customer-grid{
+grid-template-columns:1fr 1fr;
+}
+}
+
+</style>
+
+<script>
+document.getElementById('customerSearch').addEventListener('input', function () {
+  const q = this.value.toLowerCase().trim();
+  document.querySelectorAll('.customer-row').forEach(row => {
+    row.style.display = (!q || row.textContent.toLowerCase().includes(q)) ? '' : 'none';
+  });
+});
+</script>
+
+{% endblock %}

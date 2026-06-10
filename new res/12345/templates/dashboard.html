@@ -1,0 +1,1427 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — CONZURA RMS{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block topbar_actions %}
+<span style="font-size:13px;color:var(--muted)"><i class="fas fa-clock"></i> <span id="clock"></span></span>
+{% endblock %}
+
+{% block content %}
+
+
+<div class="premium-head">
+
+<div>
+
+<div class="premium-title">
+
+CONZURA Dashboard
+
+</div>
+
+<div class="premium-sub">
+
+Restaurant Analytics & Operations
+
+</div>
+
+</div>
+
+
+<div class="premium-live">
+
+🟢 LIVE
+
+</div>
+
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card gold">
+    <div class="stat-icon"><i class="fas fa-indian-rupee-sign"></i></div>
+    <div class="stat-value">₹{{ "%.0f"|format(stats.today_revenue) }}</div>
+    <div class="stat-label">Today's Revenue</div>
+  </div>
+  <div class="stat-card blue">
+    <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
+    <div class="stat-value">{{ stats.total_orders }}</div>
+    <div class="stat-label">Total Orders</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-icon"><i class="fas fa-utensils"></i></div>
+    <div class="stat-value">{{ stats.menu_items }}</div>
+    <div class="stat-label">Menu Items</div>
+  </div>
+  <div class="stat-card red">
+    <div class="stat-icon"><i class="fas fa-triangle-exclamation"></i></div>
+    <div class="stat-value">{{ stats.low_stock }}</div>
+    <div class="stat-label">Low Stock Alerts</div>
+  </div>
+  <div class="stat-card gold" style="border-left:3px solid var(--gold);">
+    <div class="stat-icon"><i class="fas fa-hourglass-half"></i></div>
+    <div class="stat-value">{{ stats.pending_orders }}</div>
+    <div class="stat-label">Pending Orders</div>
+  </div>
+</div>
+
+<div class="grid-2" style="margin-bottom:24px;">
+  
+<!-- CUSTOMER ANALYTICS -->
+
+<div class="stats-grid" style="margin-top:24px;">
+
+<div class="stat-card blue">
+
+<div class="stat-icon">
+
+<i class="fas fa-users"></i>
+
+</div>
+
+<div class="stat-value">
+
+{{ stats.total_customers }}
+
+</div>
+
+<div class="stat-label">
+
+TOTAL CUSTOMERS
+
+</div>
+
+</div>
+
+
+
+<div class="stat-card green">
+
+<div class="stat-icon">
+
+<i class="fas fa-user-plus"></i>
+
+</div>
+
+<div class="stat-value">
+
+{{ stats.new_customers }}
+
+</div>
+
+<div class="stat-label">
+
+NEW CUSTOMERS
+
+</div>
+
+</div>
+
+
+
+<div class="stat-card gold">
+
+<div class="stat-icon">
+
+<i class="fas fa-repeat"></i>
+
+</div>
+
+<div class="stat-value">
+
+{{ stats.returning_customers }}
+
+</div>
+
+<div class="stat-label">
+
+RETURNING
+
+</div>
+
+</div>
+
+
+
+<div class="stat-card red">
+
+<div class="stat-icon">
+
+<i class="fas fa-crown"></i>
+
+</div>
+
+<div class="stat-value">
+
+{{ stats.top_customer }}
+
+</div>
+
+<div class="stat-label">
+
+TOP CUSTOMER
+
+</div>
+
+</div>
+
+</div>
+
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Revenue (Last 7 Days)</span>
+    </div>
+    <div class="card-body">
+      <canvas id="revenueChart" height="200"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Recent Orders</span>
+      <a href="{{ url_for('orders.index') }}" class="btn btn-ghost btn-sm">View All</a>
+    </div>
+    <div class="card-body" style="padding:0;">
+      <table>
+        <thead><tr><th>#</th><th>Table</th><th>Status</th><th>Amount</th></tr></thead>
+        <tbody>
+          {% for o in stats.recent_orders %}
+          <tr>
+            <td style="color:var(--gold);font-weight:600;">#{{ o.id }}</td>
+            <td>Table {{ o.table_number }}</td>
+            <td><span class="badge badge-{{ o.status }}">{{ o.status }}</span></td>
+            <td>₹{{ "%.0f"|format(o.amount) }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px;">No orders yet</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="grid-3">
+  <a href="{{ url_for('orders.index') }}" style="text-decoration:none;">
+    <div class="card" style="padding:24px;display:flex;align-items:center;gap:16px;transition:border .2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="width:48px;height:48px;background:rgba(91,158,247,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--blue);font-size:20px;"><i class="fas fa-plus-circle"></i></div>
+      <div><div style="font-weight:600;">New Order</div><div style="font-size:12px;color:var(--muted);">Create table order</div></div>
+    </div>
+  </a>
+  <a href="{{ url_for('menu.index') }}" style="text-decoration:none;">
+    <div class="card" style="padding:24px;display:flex;align-items:center;gap:16px;transition:border .2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="width:48px;height:48px;background:rgba(212,168,83,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:20px;"><i class="fas fa-book-open"></i></div>
+      <div><div style="font-weight:600;">Manage Menu</div><div style="font-size:12px;color:var(--muted);">Edit food items</div></div>
+    </div>
+  </a>
+  <a href="{{ url_for('reports.index') }}" style="text-decoration:none;">
+    <div class="card" style="padding:24px;display:flex;align-items:center;gap:16px;transition:border .2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="width:48px;height:48px;background:rgba(78,202,139,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--green);font-size:20px;"><i class="fas fa-chart-bar"></i></div>
+      <div><div style="font-weight:600;">View Reports</div><div style="font-size:12px;color:var(--muted);">Sales & analytics</div></div>
+    </div>
+  </a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+
+
+<style>
+
+/* SMALL PREMIUM DASHBOARD */
+
+.stats-grid{
+
+display:grid !important;
+
+grid-template-columns:
+
+repeat(
+4,
+1fr
+);
+
+gap:16px;
+
+margin-bottom:22px;
+
+}
+
+
+
+.stat-card{
+
+padding:18px !important;
+
+min-height:120px;
+
+border-radius:24px;
+
+background:
+
+linear-gradient(
+145deg,
+rgba(255,255,255,.05),
+rgba(255,255,255,.02)
+);
+
+border:
+
+1px solid rgba(
+255,
+255,
+255,
+.06
+);
+
+backdrop-filter:
+
+blur(18px);
+
+box-shadow:
+
+0 16px 40px rgba(
+0,
+0,
+0,
+.22
+);
+
+transition:.3s;
+
+overflow:hidden;
+
+position:relative;
+
+}
+
+
+
+.stat-card::before{
+
+content:"";
+
+position:absolute;
+
+right:-60px;
+
+top:-60px;
+
+width:140px;
+
+height:140px;
+
+border-radius:50%;
+
+background:
+
+radial-gradient(
+circle,
+rgba(
+212,
+168,
+83,
+.12
+),
+transparent
+);
+
+}
+
+
+
+.stat-card:hover{
+
+transform:
+
+translateY(-5px);
+
+}
+
+
+
+.stat-value,
+.stat-number{
+
+font-size:30px !important;
+
+font-weight:900;
+
+color:var(--gold);
+
+margin-top:6px;
+
+}
+
+
+
+.stat-label{
+
+font-size:12px;
+
+letter-spacing:1px;
+
+opacity:.85;
+
+margin-top:6px;
+
+}
+
+
+
+.chart-card{
+
+padding:20px !important;
+
+border-radius:26px !important;
+
+background:
+
+linear-gradient(
+180deg,
+rgba(255,255,255,.04),
+rgba(255,255,255,.02)
+);
+
+border:
+
+1px solid rgba(
+255,
+255,
+255,
+.06
+);
+
+}
+
+
+
+.card{
+
+border-radius:24px !important;
+
+}
+
+
+
+.content{
+
+padding:28px !important;
+
+}
+
+
+
+canvas{
+
+border-radius:18px;
+
+}
+
+
+
+@media(max-width:900px){
+
+.stats-grid{
+
+grid-template-columns:
+
+repeat(
+2,
+1fr
+);
+
+}
+
+}
+
+
+
+@media(max-width:600px){
+
+.stats-grid{
+
+grid-template-columns:
+
+1fr;
+
+}
+
+}
+
+
+/* PREMIUM TOP BAR */
+
+.page-title{
+
+font-size:34px !important;
+
+font-weight:900;
+
+background:
+
+linear-gradient(
+90deg,
+#fff,
+#d4a853
+);
+
+-webkit-background-clip:text;
+
+-webkit-text-fill-color:transparent;
+
+}
+
+
+
+/* ICON AREA */
+
+.stat-card{
+
+display:flex;
+
+flex-direction:column;
+
+justify-content:center;
+
+}
+
+
+
+.stat-card::after{
+
+content:"✦";
+
+position:absolute;
+
+right:18px;
+
+top:16px;
+
+font-size:26px;
+
+opacity:.18;
+
+color:var(--gold);
+
+}
+
+
+
+/* HOVER LIGHT */
+
+.stat-card:hover{
+
+border-color:
+
+rgba(
+212,
+168,
+83,
+.25
+);
+
+}
+
+
+
+/* TABLES */
+
+table{
+
+border-spacing:0 10px;
+
+}
+
+
+
+tbody tr{
+
+background:
+
+rgba(
+255,
+255,
+255,
+.02
+);
+
+}
+
+
+
+tbody tr:hover{
+
+background:
+
+rgba(
+255,
+255,
+255,
+.04
+);
+
+}
+
+
+
+/* BUTTONS */
+
+.btn{
+
+border-radius:18px !important;
+
+}
+
+
+
+.btn-primary{
+
+background:
+
+linear-gradient(
+90deg,
+#d4a853,
+#f3d58d
+)!important;
+
+color:black !important;
+
+}
+
+
+
+/* SCROLL */
+
+::-webkit-scrollbar{
+
+width:8px;
+
+}
+
+
+
+::-webkit-scrollbar-thumb{
+
+background:
+
+rgba(
+212,
+168,
+83,
+.45
+);
+
+border-radius:10px;
+
+}
+
+
+
+/* GLASS EFFECT */
+
+.card{
+
+backdrop-filter:
+
+blur(20px);
+
+}
+
+
+
+/* CHART EFFECT */
+
+.chart-card{
+
+position:relative;
+
+overflow:hidden;
+
+}
+
+
+
+.chart-card::before{
+
+content:"";
+
+position:absolute;
+
+top:-120px;
+
+right:-120px;
+
+width:250px;
+
+height:250px;
+
+background:
+
+radial-gradient(
+circle,
+rgba(
+212,
+168,
+83,
+.08
+),
+transparent
+);
+
+}
+
+
+/* COLORFUL CARD THEMES */
+
+.stat-card:nth-child(1){
+
+background:
+
+linear-gradient(
+135deg,
+rgba(91,158,247,.18),
+rgba(91,158,247,.05)
+)!important;
+
+}
+
+
+
+.stat-card:nth-child(2){
+
+background:
+
+linear-gradient(
+135deg,
+rgba(78,202,139,.18),
+rgba(78,202,139,.05)
+)!important;
+
+}
+
+
+
+.stat-card:nth-child(3){
+
+background:
+
+linear-gradient(
+135deg,
+rgba(255,140,66,.18),
+rgba(255,140,66,.05)
+)!important;
+
+}
+
+
+
+.stat-card:nth-child(4){
+
+background:
+
+linear-gradient(
+135deg,
+rgba(212,168,83,.18),
+rgba(212,168,83,.05)
+)!important;
+
+}
+
+
+
+/* TOP BORDER LIGHT */
+
+.stat-card::before{
+
+content:"";
+
+position:absolute;
+
+left:0;
+
+top:0;
+
+height:4px;
+
+width:100%;
+
+background:
+
+linear-gradient(
+90deg,
+#5b9ef7,
+#4eca8b,
+#ff9b45,
+#d4a853
+);
+
+}
+
+
+
+/* FLOAT EFFECT */
+
+.stat-card:hover{
+
+transform:
+
+translateY(-6px)
+scale(1.02);
+
+}
+
+
+
+/* SOFT GLOW */
+
+.stat-card:hover{
+
+box-shadow:
+
+0 0 40px rgba(
+255,
+170,
+80,
+.15
+);
+
+}
+
+
+
+/* CHART COLOR */
+
+.chart-card{
+
+background:
+
+linear-gradient(
+135deg,
+rgba(255,255,255,.05),
+rgba(90,110,255,.04)
+)!important;
+
+}
+
+
+
+/* PAGE BACKGROUND GLOW */
+
+.content{
+
+position:relative;
+
+}
+
+
+
+.content::before{
+
+content:"";
+
+position:absolute;
+
+top:-250px;
+
+right:-250px;
+
+width:500px;
+
+height:500px;
+
+border-radius:50%;
+
+background:
+
+radial-gradient(
+circle,
+rgba(
+212,
+168,
+83,
+.08
+),
+transparent
+);
+
+pointer-events:none;
+
+}
+
+
+
+.content::after{
+
+content:"";
+
+position:absolute;
+
+bottom:-250px;
+
+left:-250px;
+
+width:500px;
+
+height:500px;
+
+border-radius:50%;
+
+background:
+
+radial-gradient(
+circle,
+rgba(
+91,
+158,
+247,
+.08
+),
+transparent
+);
+
+pointer-events:none;
+
+}
+
+
+
+/* NUMBER COLORS */
+
+.stat-card:nth-child(1) .stat-number{
+
+color:#6db3ff !important;
+
+}
+
+
+
+.stat-card:nth-child(2) .stat-number{
+
+color:#65ffad !important;
+
+}
+
+
+
+.stat-card:nth-child(3) .stat-number{
+
+color:#ffae5b !important;
+
+}
+
+
+
+.stat-card:nth-child(4) .stat-number{
+
+color:#ffd76d !important;
+
+}
+
+
+
+
+</style>
+
+
+<style>
+
+/* CLEAN PREMIUM */
+
+.content{
+
+padding:24px !important;
+
+}
+
+
+
+/* SMALL KPI */
+
+.stats-grid{
+
+display:grid;
+
+grid-template-columns:
+
+repeat(
+4,
+1fr
+);
+
+gap:18px;
+
+margin-bottom:26px;
+
+}
+
+
+
+.stat-card{
+
+position:relative;
+
+padding:22px !important;
+
+border-radius:28px !important;
+
+background:
+
+rgba(
+255,
+255,
+255,
+.03
+)!important;
+
+border:
+
+1px solid rgba(
+255,
+255,
+255,
+.06
+)!important;
+
+backdrop-filter:
+
+blur(20px);
+
+transition:.35s;
+
+min-height:140px;
+
+}
+
+
+
+.stat-card:hover{
+
+transform:
+
+translateY(-5px);
+
+border-color:
+
+rgba(
+255,
+255,
+255,
+.16
+);
+
+}
+
+
+
+.stat-card:nth-child(1){
+
+border-left:4px solid #6ea8ff;
+
+}
+
+
+
+.stat-card:nth-child(2){
+
+border-left:4px solid #66ffb1;
+
+}
+
+
+
+.stat-card:nth-child(3){
+
+border-left:4px solid #ffb466;
+
+}
+
+
+
+.stat-card:nth-child(4){
+
+border-left:4px solid #ffd966;
+
+}
+
+
+
+/* VALUES */
+
+.stat-number,
+.stat-value{
+
+font-size:32px !important;
+
+font-weight:900;
+
+margin-bottom:8px;
+
+}
+
+
+
+.stat-label{
+
+font-size:11px;
+
+letter-spacing:2px;
+
+opacity:.7;
+
+}
+
+
+
+/* CHART */
+
+.chart-card{
+
+border-radius:30px !important;
+
+background:
+
+rgba(
+255,
+255,
+255,
+.03
+)!important;
+
+border:
+
+1px solid rgba(
+255,
+255,
+255,
+.06
+);
+
+padding:20px !important;
+
+}
+
+
+
+/* TABLE */
+
+.card{
+
+border-radius:30px !important;
+
+}
+
+
+
+table{
+
+border-collapse:separate;
+
+border-spacing:0 10px;
+
+}
+
+
+
+tbody tr{
+
+background:
+
+rgba(
+255,
+255,
+255,
+.02
+);
+
+}
+
+
+
+tbody tr:hover{
+
+background:
+
+rgba(
+255,
+255,
+255,
+.04
+);
+
+}
+
+
+
+/* BUTTON */
+
+.btn{
+
+border-radius:18px !important;
+
+font-weight:700;
+
+}
+
+
+
+.btn-primary{
+
+background:
+
+linear-gradient(
+90deg,
+#6e84ff,
+#7b6eff
+)!important;
+
+}
+
+
+
+/* TOPBAR */
+
+.topbar{
+
+background:
+
+rgba(
+15,
+15,
+18,
+.70
+)!important;
+
+backdrop-filter:
+
+blur(20px);
+
+}
+
+
+
+/* RESPONSIVE */
+
+@media(max-width:900px){
+
+.stats-grid{
+
+grid-template-columns:
+
+1fr 1fr;
+
+}
+
+}
+
+
+
+@media(max-width:650px){
+
+.stats-grid{
+
+grid-template-columns:
+
+1fr;
+
+}
+
+}
+
+</style>
+
+<style>
+
+/* HEADER */
+
+.premium-head{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+padding:18px 26px;
+
+margin-bottom:18px;
+
+border-radius:22px;
+
+min-height:110px;
+
+background:
+
+linear-gradient(
+135deg,
+#171822,
+#1e2135
+);
+
+border:
+
+1px solid rgba(
+255,
+255,
+255,
+.06
+);
+
+}
+
+
+.premium-title{
+
+font-size:24px;
+
+font-weight:800;
+
+background:
+
+linear-gradient(
+90deg,
+#ffcf66,
+#7ab6ff
+);
+
+-webkit-background-clip:text;
+
+-webkit-text-fill-color:transparent;
+
+}
+
+
+.premium-sub{
+
+margin-top:6px;
+
+font-size:13px;
+
+color:#9aa1b3;
+
+}
+
+
+
+.premium-live{
+
+padding:10px 18px;
+
+font-size:14px;
+
+border-radius:16px;
+
+background:
+
+rgba(
+78,
+202,
+139,
+.14
+);
+
+color:#65ffad;
+
+font-weight:700;
+
+}
+
+
+
+/* FORCE CARDS */
+
+.stats-grid{
+
+display:grid !important;
+
+grid-template-columns:
+
+repeat(
+4,
+1fr
+)!important;
+
+gap:18px !important;
+
+}
+
+
+
+.stat-card{
+
+background:
+
+linear-gradient(
+145deg,
+#1b1d27,
+#12131a
+)!important;
+
+border-radius:28px !important;
+
+padding:24px !important;
+
+border:
+
+1px solid rgba(
+255,
+255,
+255,
+.08
+)!important;
+
+}
+
+
+
+.stat-card:hover{
+
+transform:
+
+translateY(-6px);
+
+}
+
+
+
+.stat-number,
+.stat-value{
+
+font-size:34px !important;
+
+color:#ffcf66 !important;
+
+font-weight:900;
+
+}
+
+
+
+.chart-card{
+
+background:
+
+#171922 !important;
+
+border-radius:30px !important;
+
+}
+
+
+
+@media(max-width:900px){
+
+.stats-grid{
+
+grid-template-columns:
+
+1fr 1fr !important;
+
+}
+
+}
+
+</style>
+
+
+{% endblock %}

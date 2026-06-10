@@ -1,0 +1,1624 @@
+
+{% extends "base.html" %}
+
+{% block title %}Menu — CONZURA RMS{% endblock %}
+{% block page_title %}Menu Management{% endblock %}
+
+{% block content %}
+{% if user.role=="admin" %}
+
+<div
+style="
+display:flex;
+justify-content:space-between;
+margin-bottom:24px;
+">
+
+<button
+class="btn btn-primary"
+onclick="document.getElementById('addModal').classList.add('open')">
+
+<i class="fas fa-plus"></i>
+
+Add Item
+
+</button>
+
+</div>
+
+{% endif %}
+
+
+<div class="menu-stats">
+
+<div class="stat-box">
+
+<div class="stat-number">
+
+{{ items|length }}
+
+</div>
+
+<div class="stat-label">
+
+🍽 Total Items
+
+</div>
+
+</div>
+
+
+
+<div class="stat-box">
+
+<div class="stat-number">
+
+{{ items|selectattr('available')|list|length }}
+
+</div>
+
+<div class="stat-label">
+
+🟢 Available
+
+</div>
+
+</div>
+
+
+
+<div class="stat-box">
+
+<div class="stat-number">
+
+₹{{ "%.0f"|format(
+
+items|sum(attribute='price')
+
+/
+
+(items|length if items else 1)
+
+) }}
+
+</div>
+
+<div class="stat-label">
+
+💰 Avg Price
+
+</div>
+
+</div>
+
+
+
+<div class="stat-box">
+
+<div class="stat-number">
+
+{{ categories|length }}
+
+</div>
+
+<div class="stat-label">
+
+📂 Categories
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+
+{% if user.role!="admin" %}
+
+<a
+href="{{ url_for('orders.index') }}"
+class="btn btn-primary btn-sm">
+
+<i class="fas fa-cart-plus"></i>
+
+Add Order
+
+</a>
+
+{% endif %}
+
+
+
+<!-- Search + Filter -->
+
+<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px;">
+
+
+<div class="search-wrap">
+
+<i class="fas fa-magnifying-glass"></i>
+
+<input
+
+id="menuSearch"
+
+type="text"
+
+placeholder="Search dishes..."
+
+>
+
+</div>
+
+
+<button
+
+class="filter-btn active"
+
+data-cat="all">
+
+All
+
+</button>
+
+
+
+
+{% for cat in categories %}
+
+
+<button
+
+class="filter-btn"
+
+data-cat="{{ cat.category }}">
+
+{{ cat.category }}
+
+</button>
+
+
+
+{% endfor %}
+
+{% if items|length==0 %}
+
+<div
+style="
+padding:80px;
+text-align:center;
+opacity:.7;
+">
+
+<i
+class="fas fa-utensils"
+style="
+font-size:60px;
+margin-bottom:20px;
+">
+
+</i>
+
+<h3>
+
+No Menu Items
+
+</h3>
+
+<p>
+
+Add your first food item
+
+</p>
+
+</div>
+
+{% endif %}
+
+
+</div>
+
+
+<div class="menu-grid">
+
+{% for item in items %}
+
+<div
+class="menu-card menu-row"
+data-cat="{{ item.category }}">
+
+<div class="menu-image">
+
+<img
+src="{% if item.image %}
+{{ url_for('static', filename='uploads/' + item.image) }}
+
+{% elif item.name|lower=='chicken biryani' %}
+https://images.unsplash.com/photo-1563379091339-03246963d96c
+
+{% elif item.name|lower=='paneer butter masala' %}
+https://images.unsplash.com/photo-1631452180519-c014fe946bc7
+
+{% elif item.name|lower=='dal makhani' %}
+https://images.unsplash.com/photo-1546833999-b9f581a1996d
+
+{% elif item.name|lower=='masala dosa' %}
+https://images.unsplash.com/photo-1668236543090-82eba5ee5976
+
+{% elif item.name|lower=='veg fried rice' %}
+https://images.unsplash.com/photo-1512058564366-18510be2db19
+
+{% elif item.name|lower=='chicken tikka' %}
+https://images.unsplash.com/photo-1603894584373-5ac82b2ae398
+
+{% elif item.name|lower=='gulab jamun' %}
+https://images.unsplash.com/photo-1605197161470-5d57f4b87367
+
+{% elif item.name|lower=='mango lassi' %}
+https://images.unsplash.com/photo-1623065422902-30a2d299bbe4
+
+{% elif item.name|lower=='naan' %}
+https://images.unsplash.com/photo-1601050690597-df0568f70950
+
+{% elif item.name|lower=='veg soup' %}
+https://images.unsplash.com/photo-1547592166-23ac45744acd
+
+{% else %}
+https://images.unsplash.com/photo-1546069901-ba9599a7e63c
+{% endif %}"
+
+alt="{{ item.name }}">
+
+<div class="menu-category">
+
+{{ item.category }}
+
+</div>
+
+{% if item.id >= (items|length-2) %}
+<div class="new-badge">NEW</div>
+{% endif %}
+
+</div>
+
+
+<div class="menu-content">
+
+<div class="menu-header">
+
+<div>
+
+
+<div class="edit-wrap">
+
+<span id="name{{ item.id }}">
+
+{{ item.name }}
+
+</span>
+
+<input
+id="editName{{ item.id }}"
+value="{{ item.name }}"
+style="
+display:none;
+width:100%;
+">
+
+</div>
+
+
+<div class="menu-id">
+
+ID #{{ item.id }}
+
+</div>
+
+</div>
+
+<div class="price">
+
+
+<span id="price{{ item.id }}">
+
+₹{{ "%.0f"|format(item.price) }}
+
+</span>
+
+<input
+id="editPrice{{ item.id }}"
+type="number"
+value="{{ item.price }}"
+style="
+display:none;
+width:90px;
+">
+
+
+</div>
+
+</div>
+
+
+<p>
+
+
+<span id="desc{{ item.id }}">
+
+{{ item.description or "Freshly prepared signature dish" }}
+
+</span>
+
+<textarea
+id="editDesc{{ item.id }}"
+style="
+display:none;
+width:100%;
+margin-top:8px;
+">
+
+{{ item.description }}
+
+</textarea>
+
+
+</p>
+
+
+<div style="
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+margin-top:14px;
+">
+
+<div class="food-chip">
+⏱ 20 min
+</div>
+
+<div class="food-chip">
+🔥 420 kcal
+</div>
+
+<div class="food-chip">
+🌶 Medium
+</div>
+
+</div>
+
+
+<div class="menu-footer">
+
+
+{% if user.role=="admin" %}
+
+<div
+style="
+display:flex;
+gap:8px;
+margin-left:auto;
+">
+
+<button
+class="btn btn-success btn-sm"
+onclick="toggleEdit({{ item.id }})">
+
+<i class="fas fa-pen"></i>
+
+</button>
+
+
+<a
+href="{{ url_for('menu.delete', item_id=item.id) }}"
+class="btn btn-danger btn-sm"
+onclick="return confirm('Delete item?')">
+
+<i class="fas fa-trash"></i>
+
+</a>
+
+</div>
+
+{% endif %}
+
+
+{% if item.available %}
+
+<span class="available">
+
+<i class="fas fa-circle-check"></i>
+
+Available
+
+</span>
+
+{% else %}
+
+<span class="unavailable">
+
+<i class="fas fa-circle-xmark"></i>
+
+Unavailable
+
+</span>
+
+{% endif %}
+
+
+{% if user.role=="admin" %}
+
+<a
+href="{{ url_for('menu.delete', item_id=item.id) }}"
+class="btn btn-danger btn-sm"
+onclick="return confirm('Delete item?')">
+
+<i class="fas fa-trash"></i>
+
+</a>
+
+{% endif %}
+
+</div>
+
+</div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+
+{% if user.role=="admin" %}
+
+<div class="modal-overlay" id="addModal">
+
+<div class="modal">
+
+<div class="modal-header">
+
+<span class="modal-title">
+
+Add Menu Item
+
+</span>
+
+<button
+class="modal-close"
+onclick="document.getElementById('addModal').classList.remove('open')">
+
+&times;
+
+</button>
+
+</div>
+
+
+<div class="modal-body">
+
+<form
+method="POST"
+action="{{ url_for('menu.add') }}"
+enctype="multipart/form-data">
+
+
+<div class="form-group">
+
+<label>
+
+Food Image
+
+</label>
+
+<input
+
+type="file"
+
+name="image"
+
+accept="image/*"
+
+onchange="previewImage(event)"
+
+>
+
+
+<img
+
+id="preview"
+
+style="
+
+display:none;
+
+width:120px;
+
+height:120px;
+
+margin-top:10px;
+
+border-radius:18px;
+
+object-fit:cover;
+
+">
+
+</div>
+
+
+<div class="form-group">
+
+<label>Item Name</label>
+
+<input
+name="name"
+required>
+
+</div>
+
+
+<div class="grid-2">
+
+<div class="form-group">
+
+<label>Category</label>
+
+<input
+name="category"
+required>
+
+</div>
+
+
+<div class="form-group">
+
+<label>Price</label>
+
+<input
+name="price"
+type="number"
+required>
+
+</div>
+
+</div>
+
+
+<div class="form-group">
+
+<label>Description</label>
+
+<textarea
+name="description">
+
+</textarea>
+
+</div>
+
+
+<button
+class="btn btn-primary"
+style="width:100%;justify-content:center;">
+
+Add Item
+
+</button>
+
+</form>
+
+</div>
+
+</div>
+
+</div>
+
+{% endif %}
+
+
+
+<style>
+
+
+.menu-stats{
+
+display:grid;
+
+grid-template-columns:
+
+repeat(
+4,
+1fr
+);
+
+gap:18px;
+
+margin-bottom:28px;
+
+}
+
+
+
+.stat-box{
+
+padding:24px;
+
+border-radius:24px;
+
+background:
+
+rgba(
+255,
+255,
+255,
+.04
+);
+
+backdrop-filter:
+
+blur(18px);
+
+border:
+
+1px solid rgba(
+255,
+255,
+255,
+.08
+);
+
+text-align:center;
+
+transition:.3s;
+
+}
+
+
+
+.stat-box:hover{
+
+transform:
+
+translateY(-6px);
+
+border-color:
+
+var(--gold);
+
+}
+
+
+
+.stat-number{
+
+font-size:28px;
+
+font-weight:800;
+
+color:
+
+var(--gold);
+
+}
+
+
+
+.stat-label{
+
+margin-top:8px;
+
+color:
+
+var(--muted);
+
+font-size:13px;
+
+}
+
+
+.menu-grid{
+
+display:grid;
+
+grid-template-columns:
+repeat(
+auto-fill,
+minmax(
+260px,
+1fr
+));
+
+gap:22px;
+
+}
+
+
+
+
+.menu-card{
+
+position:relative;
+
+backdrop-filter:
+
+blur(18px);
+
+overflow:hidden;
+
+background:
+
+linear-gradient(
+180deg,
+rgba(255,255,255,.04),
+rgba(255,255,255,.02)
+);
+
+backdrop-filter:
+
+blur(18px);
+
+border:
+
+1px solid rgba(
+255,
+255,
+255,
+.08
+);
+
+border-radius:
+
+28px;
+
+overflow:hidden;
+
+transition:
+
+all .45s ease;
+
+box-shadow:
+
+0 18px 60px rgba(
+0,
+0,
+0,
+.28
+);
+
+}
+
+
+
+.menu-card:hover{
+
+
+transform:
+
+translateY(-12px);
+
+border-color:
+
+var(--gold);
+
+box-shadow:
+
+0 30px 90px rgba(
+0,
+0,
+0,
+.35
+);
+
+border-color:
+
+var(--gold);
+
+}
+
+
+
+.menu-card::before{
+
+content:'';
+
+position:absolute;
+
+left:-50%;
+
+top:-100%;
+
+width:200%;
+
+height:250%;
+
+background:
+
+linear-gradient(
+
+120deg,
+
+transparent,
+
+rgba(
+255,
+255,
+255,
+.05
+),
+
+transparent
+
+);
+
+transform:
+
+rotate(
+18deg
+);
+
+transition:
+
+.8s;
+
+}
+
+
+
+.menu-card:hover::before{
+
+left:100%;
+
+}
+
+
+
+
+.menu-card:hover{
+
+transform:
+
+translateY(-6px);
+
+border-color:
+
+var(--gold);
+
+}
+
+
+
+.menu-image{
+
+height:160px;
+
+padding:0;
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+position:relative;
+
+overflow:hidden;
+
+border-radius:28px 28px 0 0;
+
+}
+
+
+
+
+.menu-image img{
+
+width:100%;
+
+height:160px;
+
+object-fit:cover;
+
+border-radius:28px 28px 0 0;
+
+transition:.45s;
+
+}
+
+
+
+.menu-card:hover img{
+
+transform:
+
+scale(1.08);
+
+}
+
+
+
+
+.menu-card:hover img{
+
+transform:
+
+scale(1.05);
+
+}
+
+
+
+.menu-category{
+
+position:absolute;
+
+top:12px;
+
+left:12px;
+
+padding:6px 12px;
+
+border-radius:20px;
+
+background:
+
+rgba(
+0,
+0,
+0,
+.75
+);
+
+color:white;
+
+font-size:11px;
+
+}
+
+
+
+.menu-content{
+
+padding:20px;
+
+}
+
+
+
+
+.menu-header{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:flex-start;
+
+gap:16px;
+
+}
+
+
+
+
+.menu-header h3{
+
+margin:0;
+
+font-size:18px;
+
+}
+
+
+
+.menu-id{
+
+font-size:11px;
+
+color:var(--muted);
+
+}
+
+
+
+.price{
+
+font-size:22px;
+
+font-weight:700;
+
+color:var(--gold);
+
+}
+
+
+
+.menu-content p{
+
+color:var(--muted);
+
+line-height:1.6;
+
+}
+
+
+
+.menu-footer{
+
+display:flex;
+
+justify-content:space-between;
+
+margin-top:18px;
+
+}
+
+
+
+.available{
+
+color:#4eca8b;
+
+}
+
+
+
+.unavailable{
+
+color:#e85d5d;
+
+}
+
+.filter-btn{
+
+padding:12px 22px;
+
+border-radius:40px;
+
+border:
+
+1px solid rgba(
+255,
+255,
+255,
+.08
+);
+
+background:
+
+rgba(
+255,
+255,
+255,
+.03
+);
+
+color:
+
+var(--text);
+
+cursor:pointer;
+
+transition:.35s;
+
+font-size:13px;
+
+font-weight:700;
+
+}
+
+
+
+.filter-btn:hover{
+
+transform:
+
+translateY(-2px);
+
+border-color:
+
+var(--gold);
+
+}
+
+
+
+.filter-btn.active{
+
+background:
+
+linear-gradient(
+90deg,
+var(--gold),
+#e6b24a
+);
+
+color:
+
+black;
+
+box-shadow:
+
+0 0 26px rgba(
+212,
+168,
+83,
+.55
+);
+
+}
+
+.search-wrap{
+
+position:sticky;
+
+top:16px;
+
+z-index:50;
+
+width:320px;
+
+display:flex;
+
+align-items:center;
+
+gap:12px;
+
+padding:14px 18px;
+
+border-radius:18px;
+
+background:
+
+rgba(
+255,
+255,
+255,
+.05
+);
+
+backdrop-filter:
+
+blur(16px);
+
+border:
+
+1px solid rgba(
+255,
+255,
+255,
+.08
+);
+
+box-shadow:
+
+0 16px 45px rgba(
+0,
+0,
+0,
+.18
+);
+
+}
+
+
+
+.search-wrap i{
+
+color:
+
+var(--gold);
+
+font-size:16px;
+
+}
+
+
+
+.search-wrap input{
+
+flex:1;
+
+border:none;
+
+outline:none;
+
+background:transparent;
+
+color:
+
+var(--text);
+
+font-size:14px;
+
+}
+
+
+
+.search-wrap:hover{
+
+border-color:
+
+var(--gold);
+
+}
+
+.chef-badge{
+
+position:absolute;
+
+right:14px;
+
+top:14px;
+
+padding:8px 14px;
+
+border-radius:22px;
+
+background:
+
+linear-gradient(
+90deg,
+#d4a853,
+#f3d58d
+);
+
+color:black;
+
+font-size:11px;
+
+font-weight:800;
+
+box-shadow:
+
+0 10px 30px rgba(
+212,
+168,
+83,
+.40
+);
+
+z-index:5;
+
+}
+
+
+
+.top-badge{
+
+position:absolute;
+
+right:14px;
+
+top:14px;
+
+padding:8px 14px;
+
+border-radius:22px;
+
+background:
+
+linear-gradient(
+90deg,
+#ff6b35,
+#ffb347
+);
+
+color:white;
+
+font-size:11px;
+
+font-weight:800;
+
+box-shadow:
+
+0 10px 30px rgba(
+255,
+107,
+53,
+.35
+);
+
+z-index:5;
+
+}
+
+
+.new-badge{
+
+position:absolute;
+
+left:18px;
+
+top:54px;
+
+padding:6px 12px;
+
+border-radius:16px;
+
+background:
+
+linear-gradient(
+90deg,
+#4eca8b,
+#65ffad
+);
+
+color:black;
+
+font-size:11px;
+
+font-weight:800;
+
+box-shadow:
+
+0 8px 20px rgba(
+78,
+202,
+139,
+.35
+);
+
+z-index:5;
+
+animation:
+
+pulse 1.8s infinite;
+
+}
+
+
+@keyframes pulse{
+
+0%{
+
+transform:
+
+scale(1);
+
+}
+
+50%{
+
+transform:
+
+scale(1.08);
+
+}
+
+100%{
+
+transform:
+
+scale(1);
+
+}
+
+}
+</style>
+
+<script>
+
+window.addEventListener(
+"DOMContentLoaded",
+
+function(){
+
+// SEARCH
+
+const search =
+document.getElementById(
+"menuSearch"
+)
+
+if(search){
+
+search.addEventListener(
+"input",
+
+function(){
+
+const value =
+this.value.toLowerCase()
+
+document
+.querySelectorAll(
+".menu-row"
+)
+.forEach(card=>{
+
+const txt =
+card.innerText
+.toLowerCase()
+
+card.style.display =
+
+txt.includes(value)
+
+?
+
+""
+
+:
+
+"none"
+
+})
+
+})
+
+}
+
+
+
+// FILTER
+
+document
+.querySelectorAll(
+".filter-btn"
+)
+.forEach(btn=>{
+
+btn.addEventListener(
+
+"click",
+
+function(){
+
+document
+.querySelectorAll(
+".filter-btn"
+)
+.forEach(
+
+b=>
+b.classList.remove(
+"active"
+)
+
+)
+
+this.classList.add(
+"active"
+)
+
+const cat =
+this.dataset.cat
+
+document
+.querySelectorAll(
+".menu-row"
+)
+.forEach(card=>{
+
+card.style.display =
+
+cat==="all"
+
+||
+
+card.dataset.cat===cat
+
+?
+
+""
+
+:
+
+"none"
+
+})
+
+})
+
+})
+
+})
+
+
+
+function previewImage(event){
+
+const img =
+
+document.getElementById(
+"preview"
+)
+
+if(
+
+event.target.files.length
+
+){
+
+img.src =
+
+URL.createObjectURL(
+event.target.files[0]
+)
+
+img.style.display="block"
+
+}
+
+}
+
+
+
+function quickOrder(name){
+
+alert(
+
+name+
+
+"\nOpen Orders"
+
+)
+
+}
+
+function toggleEdit(id){
+
+[
+"name",
+"desc",
+"price"
+
+].forEach(field=>{
+
+const view=
+
+document.getElementById(
+field+id
+)
+
+const edit=
+
+document.getElementById(
+"edit"+
+
+field.charAt(0)
+.toUpperCase()
+
++
+
+field.slice(1)
+
++
+
+id
+)
+
+if(!view||!edit)return
+
+view.style.display=
+
+view.style.display==="none"
+
+?
+
+""
+
+:
+
+"none"
+
+edit.style.display=
+
+edit.style.display==="block"
+
+?
+
+"none"
+
+:
+
+"block"
+
+})
+
+}
+
+
+</script>
+{% endblock %}
